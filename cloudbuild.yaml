@@ -1,0 +1,18 @@
+# Triggered on push to main: build the image, push it to Artifact Registry,
+# and deploy it as a new Cloud Run revision. Images are tagged by commit
+# ($SHORT_SHA), never :latest, so every revision traces back to a commit.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/wordpress-repo/wordpress:$SHORT_SHA', '.']
+  - name: gcr.io/cloud-builders/docker
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/wordpress-repo/wordpress:$SHORT_SHA']
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - wordpress
+      - --image=us-east1-docker.pkg.dev/$PROJECT_ID/wordpress-repo/wordpress:$SHORT_SHA
+      - --region=us-east1
+options:
+  logging: CLOUD_LOGGING_ONLY
